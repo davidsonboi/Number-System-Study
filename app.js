@@ -9,6 +9,10 @@
   const BARS_PER_NOTE = 4;
   const BEATS_PER_CYCLE = BEATS_PER_BAR * BARS_PER_NOTE; // 16
   const NOTE_REVEAL_BAR = 3; // a nota aparece no 3º compasso
+  const LISTEN_BAR = 2; // com microfone: você toca no 2º compasso
+  const FEEDBACK_BAR = 4; // e o resultado aparece no 4º
+  const CLICK_IGNORE = 0.12; // s ignorados após cada clique (evita captar o metrônomo)
+  const MIN_VOICED_FRAMES = 4;
   const LOOKAHEAD_MS = 25;
   const SCHEDULE_AHEAD = 0.1; // segundos
 
@@ -47,6 +51,16 @@
     return pretty(majorScale(tonic)[degree - 1]) + QUALITIES[degree - 1];
   }
 
+  // Nome de uma classe de altura qualquer, usando a grafia do tom quando possível
+  const SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const FLAT_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  function pitchClassName(tonic, pc) {
+    const inScale = majorScale(tonic).find((n) => pitchClass(n) === pc);
+    if (inScale) return pretty(inScale);
+    const flatKey = tonic === "F" || tonic.includes("b");
+    return pretty((flatKey ? FLAT_NAMES : SHARP_NAMES)[pc]);
+  }
+
   // Exibe bemol com o símbolo ♭ (sustenido continua #)
   const pretty = (n) => n[0] + n.slice(1).replace(/b/g, "♭");
 
@@ -62,6 +76,19 @@
   let lastDegree = null;
   const visualQueue = [];
   let rafId = null;
+
+  // Microfone
+  let micOn = false;
+  let micStream = null;
+  let analyser = null;
+  let micBuf = null;
+  let listening = false;
+  let heardWindow = false; // o 2º compasso inteiro foi escutado neste ciclo
+  let votes = new Array(12).fill(0);
+  let voicedFrames = 0;
+  let result = null; // { heard: pc | null, correct: bool }
+  let lastBeatTime = -Infinity;
+  let score = { hits: 0, total: 0 };
 
   function loadKey() {
     try {
@@ -103,6 +130,9 @@
   const backdrop = $("backdrop");
   const keyGrid = $("keyGrid");
   const scalePreview = $("scalePreview");
+  const micBtn = $("micBtn");
+  const feedbackEl = $("feedback");
+  const scoreEl = $("score");
 
   // Indicador de tempos: 4 compassos x 4 tempos
   const bars = [];
@@ -157,7 +187,10 @@
     const bar = Math.floor(ev.beat / BEATS_PER_BAR); // 0..3
     const beatInBar = ev.beat % BEATS_PER_BAR;
 
+    lastBeatTime = ev.time;
+
     if (ev.beat === 0) {
+      resetFeedback();
       shownDegree = ev.degree;
       numberEl.textContent = ev.degree;
       numberEl.classList.remove("pop");
@@ -170,6 +203,12 @@
       noteEl.classList.add("show");
     }
 
+    if (micOn && beatInBar === 0) {
+      if (bar === LISTEN_BAR - 1) startListening();
+      else if (bar === LISTEN_BAR && listening) finishListening();
+      else if (bar === FEEDBACK_BAR - 1) showFeedback();
+    }
+
     bars.forEach((el, i) => el.classList.toggle("current", i === bar));
     dots.forEach((d, i) => d.classList.toggle("on", i <= ev.beat));
     barInfoEl.textContent = `Compasso ${bar + 1} de ${BARS_PER_NOTE} · tempo ${beatInBar + 1}`;
@@ -180,6 +219,7 @@
     let latest = null;
     while (visualQueue.length && visualQueue[0].time <= now) latest = visualQueue.shift();
     if (latest) render(latest);
+    if (listening) analyzeFrame(now);
     rafId = requestAnimationFrame(draw);
   }
 
@@ -191,6 +231,8 @@
     beatInCycle = 0;
     lastDegree = null;
     visualQueue.length = 0;
+    score = { hits: 0, total: 0 };
+    updateScore();
     nextBeatTime = audioCtx.currentTime + 0.1;
     scheduler();
     timerId = setInterval(scheduler, LOOKAHEAD_MS);
@@ -207,6 +249,7 @@
     shownDegree = null;
     numberEl.textContent = "–";
     noteEl.classList.remove("show");
+    resetFeedback();
     bars.forEach((el) => el.classList.remove("current"));
     dots.forEach((d) => d.classList.remove("on"));
     barInfoEl.textContent = "Pronto";
@@ -223,6 +266,108 @@
       closeDrawer();
     }
   });
+
+  // ---------- Microfone ----------
+  function resetFeedback() {
+    listening = false;
+    heardWindow = false;
+    result = null;
+    noteEl.classList.remove("correct", "wrong");
+    feedbackEl.textContent = "";
+    feedbackEl.className = "feedback";
+  }
+
+  function startListening() {
+    votes = new Array(12).fill(0);
+    voicedFrames = 0;
+    listening = true;
+    heardWindow = true;
+    feedbackEl.textContent = "Ouvindo…";
+    feedbackEl.className = "feedback listening";
+  }
+
+  function analyzeFrame(now) {
+    // Ignora o instante de cada clique para não confundir o metrônomo com a nota
+    if (now - lastBeatTime < CLICK_IGNORE) return;
+    analyser.getFloatTimeDomainData(micBuf);
+    const r = Pitch.detectPitch(micBuf, audioCtx.sampleRate);
+    if (!r) return;
+    votes[Pitch.freqToPitchClass(r.freq)] += r.clarity;
+    voicedFrames++;
+  }
+
+  function finishListening() {
+    listening = false;
+    feedbackEl.textContent = "";
+    feedbackEl.className = "feedback";
+    if (!heardWindow || shownDegree == null) return;
+    let heard = null;
+    if (voicedFrames >= MIN_VOICED_FRAMES) {
+      heard = votes.indexOf(Math.max(...votes));
+    }
+    const target = pitchClass(majorScale(currentKey)[shownDegree - 1]);
+    result = { heard, correct: heard === target };
+  }
+
+  function showFeedback() {
+    if (!result) return;
+    noteEl.classList.add(result.correct ? "correct" : "wrong");
+    if (result.heard == null) {
+      feedbackEl.textContent = "Não ouvi nenhuma nota";
+    } else if (result.correct) {
+      feedbackEl.textContent = "Certo!";
+    } else {
+      feedbackEl.textContent = `Você tocou ${pitchClassName(currentKey, result.heard)}`;
+    }
+    feedbackEl.className = "feedback " + (result.correct ? "correct" : "wrong");
+    score.total++;
+    if (result.correct) score.hits++;
+    updateScore();
+  }
+
+  function updateScore() {
+    scoreEl.hidden = !micOn;
+    scoreEl.textContent = `Acertos: ${score.hits}/${score.total}`;
+  }
+
+  async function enableMic() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("O microfone só funciona em páginas https (ex.: GitHub Pages) ou em localhost.");
+      return;
+    }
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") await audioCtx.resume();
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+    } catch (err) {
+      alert("Não foi possível acessar o microfone. Verifique a permissão do navegador.");
+      return;
+    }
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    micBuf = new Float32Array(analyser.fftSize);
+    source.connect(analyser);
+    micOn = true;
+    micBtn.classList.add("on");
+    micBtn.setAttribute("aria-pressed", "true");
+    updateScore();
+  }
+
+  function disableMic() {
+    micOn = false;
+    if (micStream) micStream.getTracks().forEach((t) => t.stop());
+    micStream = null;
+    analyser = null;
+    resetFeedback();
+    micBtn.classList.remove("on");
+    micBtn.setAttribute("aria-pressed", "false");
+    updateScore();
+  }
+
+  micBtn.addEventListener("click", () => (micOn ? disableMic() : enableMic()));
 
   // ---------- Pop-up lateral de tom ----------
   function renderKeys() {
