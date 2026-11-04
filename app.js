@@ -39,9 +39,9 @@
   }
 
   // Campo harmônico maior: o número é sempre o grau (sem "m"),
-  // mas o acorde tem a qualidade do grau: 2, 3 e 6 menores, 7 diminuto.
-  // Ex.: em C, 2 = Dm, 6 = Am, 7 = B°.
-  const QUALITIES = ["", "m", "m", "", "", "m", "°"];
+  // mas o acorde tem a qualidade do grau: 2, 3, 6 e 7 menores.
+  // Ex.: em C, 2 = Dm, 6 = Am, 7 = Bm.
+  const QUALITIES = ["", "m", "m", "", "", "m", "m"];
 
   function chordName(tonic, degree) {
     return pretty(majorScale(tonic)[degree - 1]) + QUALITIES[degree - 1];

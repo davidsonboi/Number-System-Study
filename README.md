@@ -8,7 +8,7 @@ Ferramenta web para treinar o **sistema numérico de Nashville**.
 - Cada nota dura **4 compassos**:
   - **1º compasso**: aparece o número (grau da escala, 1–7).
   - **3º compasso**: aparece o acorde correspondente no tom escolhido.
-- O número é sempre só o grau (sem "m"), mas o acorde segue o campo harmônico maior: 2, 3 e 6 são menores e o 7 é diminuto. Ex.: em C, 2 = Dm, 3 = Em, 6 = Am, 7 = B°.
+- O número é sempre só o grau (sem "m"), mas o acorde segue o campo harmônico maior: 2, 3, 6 e 7 são menores. Ex.: em C, 2 = Dm, 3 = Em, 6 = Am, 7 = Bm.
 - Os graus são sorteados aleatoriamente (sem repetir o anterior), sempre dentro do tom.
 - O botão **Tom** abre um pop-up lateral para trocar a tonalidade (12 tons maiores, com a grafia usual de cada escala: F usa B♭, D usa F#, etc.). A escolha fica salva no navegador.
 - Atalho: barra de espaço inicia/para.
