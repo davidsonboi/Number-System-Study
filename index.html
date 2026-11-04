@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Treino Nashville</title>
+  <meta name="description" content="Treino do sistema numérico de Nashville com metrônomo." />
+  <meta name="theme-color" content="#d9480f" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Nashville" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,20 +18,25 @@
     <h1>Treino Nashville</h1>
     <button id="keyBtn" class="key-btn" aria-haspopup="dialog" aria-controls="drawer">
       Tom: <strong id="keyLabel">C</strong>
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3zm4 5h14v2H7zm4 5h10v2H11z"/></svg>
     </button>
   </header>
 
   <main class="stage">
+    <div class="modes" role="group" aria-label="Modo de treino">
+      <button data-mode="random" aria-pressed="true">Aleatório</button>
+      <button data-mode="progressions" aria-pressed="false">Progressões</button>
+      <button data-mode="song" aria-pressed="false">Música</button>
+    </div>
+
     <div class="bar-info" id="barInfo">Pronto</div>
 
-    <div class="card">
-      <div class="number" id="number">–</div>
-      <div class="note" id="note">&nbsp;</div>
+    <div class="card single" id="card">
+      <div class="number">–</div>
+      <div class="note"></div>
     </div>
 
-    <div class="beats" id="beats" aria-hidden="true">
-      <!-- 4 compassos x 4 tempos -->
-    </div>
+    <div class="beats" id="beats" aria-hidden="true"></div>
 
     <div class="controls">
       <button id="startBtn" class="start-btn">Iniciar</button>
@@ -33,22 +45,52 @@
       <span class="bpm-label"><strong id="bpmValue">90</strong> BPM</span>
       <input type="range" id="bpmSlider" min="40" max="200" step="1" value="90" aria-label="Andamento em BPM" />
     </label>
-    <p class="hint">4 compassos por nota · número no 1º compasso, acorde no 3º</p>
+    <p class="hint" id="hint"></p>
   </main>
 
   <div class="backdrop" id="backdrop" hidden></div>
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
     <div class="drawer-head">
-      <h2 id="drawerTitle">Escolher tom</h2>
+      <h2 id="drawerTitle">Ajustes</h2>
       <button id="closeDrawer" class="close-btn" aria-label="Fechar">×</button>
     </div>
-    <div class="key-grid" id="keyGrid"></div>
-    <div class="scale-preview">
-      <span class="label">Escala</span>
-      <div id="scalePreview"></div>
-    </div>
+
+    <section>
+      <h3>Tom</h3>
+      <div class="key-grid" id="keyGrid"></div>
+      <div class="scale-preview" id="scalePreview"></div>
+    </section>
+
+    <section id="progSection" hidden>
+      <h3>Progressões</h3>
+      <p class="muted">Sorteadas entre as marcadas.</p>
+      <div id="progList" class="prog-list"></div>
+    </section>
+
+    <section id="songSection" hidden>
+      <h3>Música</h3>
+      <p class="muted">Cole a cifra (Chordify, Cifra Club…). Linhas com letra são ignoradas; cada acorde vale um compasso.</p>
+      <textarea id="songText" rows="7" placeholder="G  D  Em  C&#10;G  D/F#  Em7  C"></textarea>
+      <input id="songName" type="text" placeholder="Nome da música" />
+      <div class="btn-row">
+        <button id="songUse" class="primary">Usar</button>
+        <button id="songSave">Salvar</button>
+      </div>
+      <div id="songPreview" class="song-preview"></div>
+      <h4>Salvas</h4>
+      <ul id="songList" class="song-list"></ul>
+    </section>
+
+    <section>
+      <h3>Som</h3>
+      <label class="switch">
+        <input type="checkbox" id="chordToggle" />
+        <span>Tocar o acorde quando ele aparece</span>
+      </label>
+    </section>
   </aside>
 
+  <script src="theory.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
