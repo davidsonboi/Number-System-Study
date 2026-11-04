@@ -126,6 +126,17 @@ body {
 }
 .start-btn.running { background: var(--text); color: var(--bg); }
 
+.bpm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, 100%);
+}
+.bpm-label { color: var(--muted); font-size: 0.95rem; }
+.bpm-label strong { color: var(--text); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.bpm input { width: 100%; accent-color: var(--accent); }
+
 .hint { color: var(--muted); font-size: 0.85rem; text-align: center; margin: 0; }
 
 /* Drawer lateral */
