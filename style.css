@@ -8,8 +8,6 @@
   --dot: #d6d3ce;
   --border: #e4e1dc;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --green: #2b8a3e;
-  --red: #c92a2a;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -22,8 +20,6 @@
     --dot: #3a3835;
     --border: #2e2c2a;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    --green: #51cf66;
-    --red: #ff6b6b;
   }
 }
 
@@ -47,8 +43,7 @@ body {
 }
 .topbar h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
 
-.top-actions { display: flex; gap: 8px; }
-.pill-btn {
+.key-btn {
   font: inherit;
   background: var(--surface);
   color: var(--text);
@@ -58,8 +53,6 @@ body {
   cursor: pointer;
 }
 .key-btn strong { color: var(--accent); }
-.mic-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
-.mic-btn.on { background: var(--green); border-color: var(--green); color: #fff; }
 
 .stage {
   flex: 1;
@@ -102,19 +95,6 @@ body {
   transition: opacity 0.15s, transform 0.15s;
 }
 .note.show { opacity: 1; transform: none; }
-.note.correct { color: var(--green); }
-.note.wrong { color: var(--red); }
-.feedback {
-  min-height: 1.3em;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-.feedback.correct { color: var(--green); }
-.feedback.wrong { color: var(--red); }
-.feedback.listening { animation: blink 1s ease-in-out infinite; }
-@keyframes blink { 50% { opacity: 0.4; } }
-.score { color: var(--muted); font-size: 0.95rem; font-variant-numeric: tabular-nums; margin-top: -12px; }
 .number.pop { animation: pop 0.18s ease-out; }
 @keyframes pop { from { transform: scale(0.9); opacity: 0.4; } to { transform: none; opacity: 1; } }
 
