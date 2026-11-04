@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Treino Nashville</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Treino Nashville</h1>
+    <button id="keyBtn" class="key-btn" aria-haspopup="dialog" aria-controls="drawer">
+      Tom: <strong id="keyLabel">C</strong>
+    </button>
+  </header>
+
+  <main class="stage">
+    <div class="bar-info" id="barInfo">Pronto</div>
+
+    <div class="card">
+      <div class="number" id="number">–</div>
+      <div class="note" id="note">&nbsp;</div>
+    </div>
+
+    <div class="beats" id="beats" aria-hidden="true">
+      <!-- 4 compassos x 4 tempos -->
+    </div>
+
+    <div class="controls">
+      <button id="startBtn" class="start-btn">Iniciar</button>
+    </div>
+    <p class="hint">90 BPM · 4 compassos por nota · número no 1º compasso, nota no 3º</p>
+  </main>
+
+  <div class="backdrop" id="backdrop" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+    <div class="drawer-head">
+      <h2 id="drawerTitle">Escolher tom</h2>
+      <button id="closeDrawer" class="close-btn" aria-label="Fechar">×</button>
+    </div>
+    <div class="key-grid" id="keyGrid"></div>
+    <div class="scale-preview">
+      <span class="label">Escala</span>
+      <div id="scalePreview"></div>
+    </div>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>
