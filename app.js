@@ -592,6 +592,17 @@
 
   // App instalável / offline
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    // Quando uma versão nova do app assume, recarrega para mostrá-la
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (hadController && !reloaded && !running) {
+        reloaded = true;
+        location.reload();
+      }
+    });
+    window.addEventListener("load", () =>
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {})
+    );
   }
 })();
