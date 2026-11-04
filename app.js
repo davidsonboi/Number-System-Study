@@ -13,15 +13,33 @@
   const SCHEDULE_AHEAD = 0.1; // segundos
 
   // ---------- Teoria ----------
-  // Apenas sustenidos (#), nunca bemóis
-  const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const KEYS = NOTES;
+  // Tons maiores com a grafia usual: cada grau usa uma letra diferente,
+  // então F tem Bb (e não A#), D tem F#, etc.
+  const KEYS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+  const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
+  const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
 
-  function majorScale(tonic) {
-    const t = NOTES.indexOf(tonic);
-    return MAJOR_STEPS.map((step) => NOTES[(t + step) % 12]);
+  function pitchClass(name) {
+    let pc = LETTER_PC[name[0]];
+    for (const ch of name.slice(1)) pc += ch === "#" ? 1 : ch === "b" ? -1 : 0;
+    return ((pc % 12) + 12) % 12;
   }
+
+  function majorScale(tonic) {
+    const tonicPc = pitchClass(tonic);
+    const startLetter = LETTERS.indexOf(tonic[0]);
+    return MAJOR_STEPS.map((step, i) => {
+      const letter = LETTERS[(startLetter + i) % 7];
+      const target = (tonicPc + step) % 12;
+      let diff = (target - LETTER_PC[letter] + 12) % 12;
+      if (diff > 6) diff -= 12;
+      return letter + (diff > 0 ? "#".repeat(diff) : "b".repeat(-diff));
+    });
+  }
+
+  // Exibe bemol com o símbolo ♭ (sustenido continua #)
+  const pretty = (n) => n[0] + n.slice(1).replace(/b/g, "♭");
 
   // ---------- Estado ----------
   let currentKey = loadKey();
@@ -139,7 +157,7 @@
       noteEl.classList.remove("show");
     }
     if (bar >= NOTE_REVEAL_BAR - 1 && shownDegree != null) {
-      noteEl.textContent = (majorScale(currentKey)[shownDegree - 1]);
+      noteEl.textContent = pretty(majorScale(currentKey)[shownDegree - 1]);
       noteEl.classList.add("show");
     }
 
@@ -202,14 +220,14 @@
     keyGrid.innerHTML = "";
     KEYS.forEach((k) => {
       const b = document.createElement("button");
-      b.textContent = (k);
+      b.textContent = pretty(k);
       b.classList.toggle("active", k === currentKey);
       b.addEventListener("click", () => setKey(k));
       keyGrid.appendChild(b);
     });
-    keyLabel.textContent = (currentKey);
+    keyLabel.textContent = pretty(currentKey);
     scalePreview.innerHTML = majorScale(currentKey)
-      .map((n, i) => `<div><div class="deg">${i + 1}</div>${(n)}</div>`)
+      .map((n, i) => `<div><div class="deg">${i + 1}</div>${pretty(n)}</div>`)
       .join("");
   }
 
@@ -219,7 +237,7 @@
     renderKeys();
     // Se a nota já está visível, atualiza para o novo tom
     if (shownDegree != null && noteEl.classList.contains("show")) {
-      noteEl.textContent = (majorScale(currentKey)[shownDegree - 1]);
+      noteEl.textContent = pretty(majorScale(currentKey)[shownDegree - 1]);
     }
   }
 

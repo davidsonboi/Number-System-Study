@@ -9,7 +9,7 @@ Ferramenta web para treinar o **sistema numérico de Nashville**.
   - **1º compasso**: aparece o número (grau da escala, 1–7).
   - **3º compasso**: aparece a nota correspondente no tom escolhido.
 - Os graus são sorteados aleatoriamente (sem repetir o anterior), sempre dentro do tom.
-- O botão **Tom** abre um pop-up lateral para trocar a tonalidade (12 tons maiores; as notas são sempre escritas com sustenido #, nunca bemol). A escolha fica salva no navegador.
+- O botão **Tom** abre um pop-up lateral para trocar a tonalidade (12 tons maiores, com a grafia usual de cada escala: F usa B♭, D usa F#, etc.). A escolha fica salva no navegador.
 - Atalho: barra de espaço inicia/para.
 
 O clique do metrônomo diferencia o início de cada nota (mais agudo), o início de cada compasso e os demais tempos.
