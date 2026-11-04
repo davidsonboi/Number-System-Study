@@ -38,6 +38,15 @@
     });
   }
 
+  // Campo harmônico maior: o número é sempre o grau (sem "m"),
+  // mas o acorde tem a qualidade do grau: 2, 3 e 6 menores, 7 diminuto.
+  // Ex.: em C, 2 = Dm, 6 = Am, 7 = B°.
+  const QUALITIES = ["", "m", "m", "", "", "m", "°"];
+
+  function chordName(tonic, degree) {
+    return pretty(majorScale(tonic)[degree - 1]) + QUALITIES[degree - 1];
+  }
+
   // Exibe bemol com o símbolo ♭ (sustenido continua #)
   const pretty = (n) => n[0] + n.slice(1).replace(/b/g, "♭");
 
@@ -157,7 +166,7 @@
       noteEl.classList.remove("show");
     }
     if (bar >= NOTE_REVEAL_BAR - 1 && shownDegree != null) {
-      noteEl.textContent = pretty(majorScale(currentKey)[shownDegree - 1]);
+      noteEl.textContent = chordName(currentKey, shownDegree);
       noteEl.classList.add("show");
     }
 
@@ -226,8 +235,8 @@
       keyGrid.appendChild(b);
     });
     keyLabel.textContent = pretty(currentKey);
-    scalePreview.innerHTML = majorScale(currentKey)
-      .map((n, i) => `<div><div class="deg">${i + 1}</div>${pretty(n)}</div>`)
+    scalePreview.innerHTML = MAJOR_STEPS
+      .map((_, i) => `<div><div class="deg">${i + 1}</div>${chordName(currentKey, i + 1)}</div>`)
       .join("");
   }
 
@@ -237,7 +246,7 @@
     renderKeys();
     // Se a nota já está visível, atualiza para o novo tom
     if (shownDegree != null && noteEl.classList.contains("show")) {
-      noteEl.textContent = pretty(majorScale(currentKey)[shownDegree - 1]);
+      noteEl.textContent = chordName(currentKey, shownDegree);
     }
   }
 
@@ -272,5 +281,5 @@
   renderKeys();
 
   // Exposto para testes
-  window.__nns = { majorScale, KEYS };
+  window.__nns = { majorScale, chordName, KEYS };
 })();
