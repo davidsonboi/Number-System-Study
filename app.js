@@ -223,6 +223,8 @@
 
   function buildBeats(bars) {
     beatsEl.innerHTML = "";
+    // Até 4 compassos por linha; com menos, as colunas se ajustam e o bloco fica centralizado
+    beatsEl.style.gridTemplateColumns = `repeat(${Math.min(bars, 4)}, auto)`;
     barEls = [];
     dotEls = [];
     for (let b = 0; b < bars; b++) {

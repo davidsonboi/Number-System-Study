@@ -103,7 +103,9 @@ body {
 .beats {
   display: grid;
   grid-template-columns: repeat(4, auto);
+  justify-content: center;
   gap: 14px;
+  max-width: 100%;
 }
 .bar { display: flex; gap: 6px; padding: 6px 8px; border-radius: 10px; }
 .bar.current { background: var(--accent-soft); }
