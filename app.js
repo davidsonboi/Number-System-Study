@@ -8,8 +8,8 @@
   const BPM_MAX = 200;
   const BPM_DEFAULT = 90;
   const BEATS_PER_BAR = 4;
-  const RANDOM_BARS = 4; // aleatório: 4 compassos por nota
-  const RANDOM_REVEAL_BAR = 2; // acorde aparece no 3º compasso (índice 2)
+  // Cada acorde ocupa 1 compasso: número na 1ª batida, acorde na 3ª
+  const REVEAL_BEAT = 2; // índice da 3ª batida
   const LINE_SIZE = 4; // progressões/músicas: até 4 acordes por linha
   const LOOKAHEAD_MS = 25;
   const SCHEDULE_AHEAD = 0.1; // segundos
@@ -27,9 +27,9 @@
   ];
 
   const HINTS = {
-    random: "Número no 1º compasso, acorde no 3º · 4 compassos por nota",
-    progressions: "Primeiro os números (1 por compasso), depois os acordes",
-    song: "Cada acorde da cifra = 1 compasso · números primeiro, depois os acordes",
+    random: "1 compasso por nota · número na 1ª batida, acorde na 3ª",
+    progressions: "1 compasso por acorde · número na 1ª batida, acorde na 3ª",
+    song: "Cada acorde da cifra = 1 compasso · número na 1ª batida, acorde na 3ª",
   };
 
   // ---------- Armazenamento ----------
@@ -93,8 +93,8 @@
   const chordToggle = $("chordToggle");
 
   // ---------- Ciclos ----------
-  // Um ciclo é o bloco que se repete: no modo aleatório, 1 nota em 4 compassos;
-  // nos outros, uma linha de até 4 acordes: N compassos de números + N de acordes.
+  // Um ciclo é o bloco que se repete: no modo aleatório, 1 nota (1 compasso);
+  // nos outros, uma linha de até 4 acordes (1 compasso cada).
   function randomDegree() {
     let d;
     do { d = 1 + Math.floor(Math.random() * 7); } while (d === lastDegree);
@@ -123,7 +123,7 @@
     if (mode === "progressions") {
       const p = pickProgression();
       const items = p.degrees.map(T.diatonic);
-      return { type: "row", items, bars: items.length * 2, title: "Progressão " + p.degrees.join("–") };
+      return { type: "row", items, bars: items.length, title: "Progressão " + p.degrees.join("–") };
     }
     if (mode === "song" && song && song.chords.length) {
       const lines = songLines();
@@ -131,19 +131,11 @@
       const items = lines[songLine];
       const title = `${song.name || "Música"} · linha ${songLine + 1} de ${lines.length}`;
       songLine = (songLine + 1) % lines.length;
-      return { type: "row", items, bars: items.length * 2, title };
+      return { type: "row", items, bars: items.length, title };
     }
-    return { type: "single", items: [T.diatonic(randomDegree())], bars: RANDOM_BARS, title: "" };
+    return { type: "single", items: [T.diatonic(randomDegree())], bars: 1, title: "" };
   }
 
-  // Qual acorde soa em cada compasso, e por quantos compassos
-  function chordForBar(cycle, bar) {
-    if (cycle.type === "single") {
-      return bar === RANDOM_REVEAL_BAR ? { chord: cycle.items[0], bars: RANDOM_BARS - RANDOM_REVEAL_BAR } : null;
-    }
-    const n = cycle.items.length;
-    return bar >= n ? { chord: cycle.items[bar - n], bars: 1 } : null;
-  }
 
   // ---------- Áudio ----------
   function ensureAudio() {
@@ -209,9 +201,10 @@
     if (beat === 0) schedCycle = nextCycle();
     const kind = beat === 0 ? "cycle" : beat % BEATS_PER_BAR === 0 ? "bar" : "beat";
     click(time, kind);
-    if (playChords && beat % BEATS_PER_BAR === 0) {
-      const c = chordForBar(schedCycle, beat / BEATS_PER_BAR);
-      if (c) playChord(time, c.chord, (c.bars * BEATS_PER_BAR * 60) / bpm);
+    // O acorde soa quando aparece (3ª batida) até o fim do compasso
+    if (playChords && beat % BEATS_PER_BAR === REVEAL_BEAT) {
+      const chord = schedCycle.items[Math.floor(beat / BEATS_PER_BAR)];
+      playChord(time, chord, ((BEATS_PER_BAR - REVEAL_BEAT) * 60) / bpm);
     }
     visualQueue.push({ beat, time, cycle: schedCycle });
   }
@@ -291,18 +284,16 @@
       refreshChordNames();
     }
 
+    const revealed = beatInBar >= REVEAL_BEAT;
     if (cycle.type === "single") {
-      cardEl.querySelector(".note").classList.toggle("show", bar >= RANDOM_REVEAL_BAR);
-      barInfoEl.textContent = `Compasso ${bar + 1} de ${cycle.bars} · tempo ${beatInBar + 1}`;
+      cardEl.querySelector(".note").classList.toggle("show", revealed);
+      barInfoEl.textContent = `Batida ${beatInBar + 1} de ${BEATS_PER_BAR}`;
     } else {
-      const n = cycle.items.length;
-      const pass2 = bar >= n;
-      const pos = pass2 ? bar - n : bar;
       cardEl.querySelectorAll(".slot").forEach((slot, i) => {
-        slot.classList.toggle("current", i === pos);
-        slot.querySelector(".chord").classList.toggle("show", pass2 && i <= pos);
+        slot.classList.toggle("current", i === bar);
+        slot.querySelector(".chord").classList.toggle("show", i < bar || (i === bar && revealed));
       });
-      barInfoEl.textContent = `${cycle.title} · ${pass2 ? "acordes" : "números"} · compasso ${bar + 1} de ${cycle.bars}`;
+      barInfoEl.textContent = `${cycle.title} · compasso ${bar + 1} de ${cycle.bars} · batida ${beatInBar + 1}`;
     }
 
     barEls.forEach((el, i) => el.classList.toggle("current", i === bar));
@@ -321,7 +312,7 @@
     shownCycle = null;
     cardEl.className = "card single";
     cardEl.innerHTML = `<div class="number">–</div><div class="note"></div>`;
-    buildBeats(mode === "random" ? RANDOM_BARS : LINE_SIZE * 2);
+    buildBeats(mode === "random" ? 1 : LINE_SIZE);
     if (mode === "song" && !(song && song.chords.length)) {
       barInfoEl.textContent = "Cole uma cifra em Ajustes para usar o modo Música";
     } else {

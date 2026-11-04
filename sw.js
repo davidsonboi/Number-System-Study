@@ -1,6 +1,6 @@
 // Service worker: guarda os arquivos para o app funcionar offline.
 // Ao mudar algum arquivo, aumente a versão para forçar a atualização.
-const CACHE = "nns-v1";
+const CACHE = "nns-v2";
 const ASSETS = [
   "./",
   "index.html",
